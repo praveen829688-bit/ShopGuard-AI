@@ -1,0 +1,11 @@
+Flask
+flask-cors
+pymongo
+python-dotenv
+PyJWT
+bcrypt
+pandas
+numpy
+scikit-learn
+Pillow
+opencv-python
