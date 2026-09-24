@@ -31,7 +31,6 @@ function App() {
   const [analysis, setAnalysis] = useState(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
-  const [intelligence, setIntelligence] = useState(null);
 
   useEffect(() => {
     fetchProducts();
@@ -78,59 +77,16 @@ function App() {
     try {
       setSelectedProduct(product);
       setAnalysis(null);
-      setIntelligence(null);
       setAnalysisError("");
       setAnalysisLoading(true);
 
-      const endpoints = [
-        `api/analyze/${product.id}`,
-        `api/decision/${product.id}`,
-        `api/price-intelligence/${product.id}`,
-        `api/product-truth/${product.id}`,
-        `api/decision-intelligence/${product.id}`,
-        `api/security-intelligence/${product.id}`,
-        `api/negotiation/${product.id}`
-      ];
-
-      const results = await Promise.all(
-        endpoints.map(async (endpoint) => {
-          try {
-            const response = await axios.get(`${API_URL}/${endpoint}`);
-            return {
-              endpoint,
-              data: response.data,
-              success: true
-            };
-          } catch (error) {
-            console.warn(`ShopGuard API failed: ${endpoint}`, error);
-            return {
-              endpoint,
-              data: null,
-              success: false
-            };
-          }
-        })
+      const response = await axios.get(
+        `${API_URL}/api/analyze/${product.id}`
       );
 
-      const getResult = (name) =>
-        results.find((item) => item.endpoint === name)?.data || null;
-
-      const mainAnalysis = getResult(`api/analyze/${product.id}`);
-
-      setAnalysis(mainAnalysis);
-
-      setIntelligence({
-        decision: getResult(`api/decision/${product.id}`),
-        price: getResult(`api/price-intelligence/${product.id}`),
-        truth: getResult(`api/product-truth/${product.id}`),
-        decisionIntelligence: getResult(
-          `api/decision-intelligence/${product.id}`
-        ),
-        security: getResult(`api/security-intelligence/${product.id}`),
-        negotiation: getResult(`api/negotiation/${product.id}`)
-      });
+      setAnalysis(response.data);
     } catch (err) {
-      console.error("ShopGuard AI analysis error:", err);
+      console.error("AI analysis error:", err);
       setAnalysisError(
         err.response?.data?.error ||
         "Unable to complete ShopGuard AI analysis."
@@ -139,7 +95,6 @@ function App() {
       setAnalysisLoading(false);
     }
   };
-
 
   const addToCart = (product) => {
     setCart((current) => {
@@ -554,141 +509,172 @@ function App() {
       </main>
 
       {selectedProduct && (
-        <div className="modal-overlay" onClick={() => setSelectedProduct(null)}>
-          <div className="analysis-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div>
-                <span className="eyebrow">SHOPGUARD AI</span>
-                <h2>{selectedProduct.name}</h2>
-                <p>{selectedProduct.brand} • ₹{selectedProduct.price?.toLocaleString()}</p>
-              </div>
-              <button className="close-btn" onClick={() => setSelectedProduct(null)}>×</button>
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setSelectedProduct(null);
+            setAnalysis(null);
+          }}
+        >
+          <div
+            className="analysis-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="modal-close"
+              onClick={() => {
+                setSelectedProduct(null);
+                setAnalysis(null);
+              }}
+            >
+              <X size={22} />
+            </button>
+
+            <div className="modal-icon">
+              <Brain size={34} />
             </div>
+
+            <span>SHOPGUARD AI ANALYSIS</span>
+
+            <h2>{selectedProduct.name}</h2>
+
+            <p>
+              {selectedProduct.brand} ? {selectedProduct.seller}
+            </p>
 
             {analysisLoading && (
               <div className="analysis-loading">
-                <div className="loader"></div>
-                <h3>Running ShopGuard AI...</h3>
-                <p>Analyzing product, price, seller, security and trust signals.</p>
+                <Brain size={32} />
+                <h3>Analyzing product...</h3>
+                <p>
+                  ShopGuard AI is evaluating price, reviews, seller trust,
+                  quality and shopping risks.
+                </p>
               </div>
             )}
 
             {analysisError && (
-              <div className="error-box">
-                <h3>Analysis Error</h3>
+              <div className="analysis-error">
+                <ShieldAlert size={28} />
+                <h3>Analysis failed</h3>
                 <p>{analysisError}</p>
+
+                <button
+                  onClick={() => analyzeProduct(selectedProduct)}
+                  className="primary-button"
+                >
+                  Try Again
+                </button>
               </div>
             )}
 
-            {!analysisLoading && analysis && (
+            {analysis && (
               <>
                 <div className="analysis-grid">
-
-                  <div className="analysis-card">
-                    <span>Overall Score</span>
+                  <div>
                     <strong>
-                      {analysis.overallScore ??
-                       analysis.score ??
-                       analysis.decision?.score ??
-                       "N/A"}
+                      {analysis.quality?.score ??
+                        analysis.qualityScore ??
+                        selectedProduct.qualityScore}%
                     </strong>
+                    <span>Quality</span>
                   </div>
 
-                  <div className="analysis-card">
+                  <div>
+                    <strong>
+                      {analysis.seller?.score ??
+                        analysis.sellerTrust ??
+                        selectedProduct.sellerTrust}%
+                    </strong>
                     <span>Seller Trust</span>
-                    <strong>{selectedProduct.sellerTrust ?? "N/A"}</strong>
                   </div>
 
-                  <div className="analysis-card">
+                  <div>
+                    <strong>
+                      {analysis.reviews?.score ??
+                        analysis.reviewTrust ??
+                        selectedProduct.reviewTrust}%
+                    </strong>
                     <span>Review Trust</span>
-                    <strong>{selectedProduct.reviewTrust ?? "N/A"}</strong>
                   </div>
 
-                  <div className="analysis-card">
-                    <span>Quality Score</span>
-                    <strong>{selectedProduct.qualityScore ?? "N/A"}</strong>
-                  </div>
-
-                  <div className="analysis-card">
+                  <div>
+                    <strong>
+                      {analysis.compatibility?.score ??
+                        selectedProduct.compatibilityScore}%
+                    </strong>
                     <span>Compatibility</span>
-                    <strong>{selectedProduct.compatibilityScore ?? "N/A"}</strong>
                   </div>
 
-                  <div className="analysis-card">
+                  <div>
+                    <strong>
+                      {analysis.eco?.score ??
+                        selectedProduct.ecoScore}%
+                    </strong>
                     <span>Eco Score</span>
-                    <strong>{selectedProduct.ecoScore ?? "N/A"}</strong>
                   </div>
 
+                  <div>
+                    <strong>
+                      {analysis.returns?.risk ??
+                        selectedProduct.returnRisk}%
+                    </strong>
+                    <span>Return Risk</span>
+                  </div>
                 </div>
 
-                {analysis.scamRisk && (
-                  <div className="intelligence-card">
-                    <h3>🛡️ Scam Risk</h3>
-                    <pre>{JSON.stringify(analysis.scamRisk, null, 2)}</pre>
+                <div className="analysis-result">
+                  <ShieldCheck size={22} />
+
+                  <div>
+                    <strong>ShopGuard AI Decision</strong>
+
+                    <p>
+                      {analysis.decision ||
+                        analysis.recommendation ||
+                        analysis.verdict ||
+                        "Product analysis completed successfully."}
+                    </p>
+                  </div>
+                </div>
+
+                {analysis.scam && (
+                  <div className="analysis-result">
+                    <ShieldAlert size={22} />
+
+                    <div>
+                      <strong>Scam Risk</strong>
+
+                      <p>
+                        Risk: {analysis.scam.risk ?? "N/A"}%
+                        {" ? "}
+                        Level: {analysis.scam.level ?? "N/A"}
+                      </p>
+                    </div>
                   </div>
                 )}
 
-                {intelligence?.price && (
-                  <div className="intelligence-card">
-                    <h3>💰 Price Intelligence</h3>
-                    <pre>{JSON.stringify(intelligence.price, null, 2)}</pre>
+                {analysis.price && (
+                  <div className="analysis-result">
+                    <PackageCheck size={22} />
+
+                    <div>
+                      <strong>Price Intelligence</strong>
+
+                      <p>
+                        Score: {analysis.price.score ?? "N/A"}
+                        {" ? "}
+                        Discount: {analysis.price.discount ?? 0}%
+                      </p>
+                    </div>
                   </div>
                 )}
-
-                <div className="intelligence-section">
-                  <h3>🧠 ShopGuard Intelligence</h3>
-
-                  <div className="intelligence-grid">
-
-                    {intelligence?.decision && (
-                      <div className="intelligence-card">
-                        <h4>Decision Engine</h4>
-                        <pre>{JSON.stringify(intelligence.decision, null, 2)}</pre>
-                      </div>
-                    )}
-
-                    {intelligence?.priceTruth && (
-                      <div className="intelligence-card">
-                        <h4>Price Intelligence</h4>
-                        <pre>{JSON.stringify(intelligence.priceTruth, null, 2)}</pre>
-                      </div>
-                    )}
-
-                    {intelligence?.productTruth && (
-                      <div className="intelligence-card">
-                        <h4>Product Truth</h4>
-                        <pre>{JSON.stringify(intelligence.productTruth, null, 2)}</pre>
-                      </div>
-                    )}
-
-                    {intelligence?.decisionIntelligence && (
-                      <div className="intelligence-card">
-                        <h4>Decision Intelligence</h4>
-                        <pre>{JSON.stringify(intelligence.decisionIntelligence, null, 2)}</pre>
-                      </div>
-                    )}
-
-                    {intelligence?.security && (
-                      <div className="intelligence-card">
-                        <h4>Security Intelligence</h4>
-                        <pre>{JSON.stringify(intelligence.security, null, 2)}</pre>
-                      </div>
-                    )}
-
-                    {intelligence?.negotiation && (
-                      <div className="intelligence-card">
-                        <h4>Negotiation Engine</h4>
-                        <pre>{JSON.stringify(intelligence.negotiation, null, 2)}</pre>
-                      </div>
-                    )}
-
-                  </div>
-                </div>
               </>
             )}
           </div>
         </div>
       )}
+
       <footer>
         <div className="logo">
           <ShieldCheck size={24} />
@@ -702,4 +688,3 @@ function App() {
 }
 
 export default App;
-

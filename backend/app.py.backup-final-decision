@@ -389,18 +389,6 @@ def regret_intelligence(product, budget):
 def final_decision(product, budget=None):
 
     price = price_intelligence(product)
-
-    # Normalize Flask tuple responses to dictionaries.
-    if isinstance(price, tuple):
-        price = price[0]
-
-    if not isinstance(price, dict):
-        price = {
-            "score": 50,
-            "price": product.get("price", 0),
-            "originalPrice": product.get("originalPrice", product.get("price", 0)),
-            "discount": 0
-        }
     reviews = review_intelligence(product)
     seller = seller_intelligence(product)
     scam = scam_intelligence(product)
@@ -1916,7 +1904,6 @@ def calculate_price_intelligence(product):
         "reasons": reasons
 
     }
-
 
 
 

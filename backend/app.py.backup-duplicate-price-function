@@ -264,63 +264,40 @@ def seller_intelligence(product):
 
 
 def scam_intelligence(product):
-    """Calculate scam risk safely."""
-
     price_data = price_intelligence(product)
-
-    if isinstance(price_data, tuple):
-        price_data = price_data[0]
-
-    if not isinstance(price_data, dict):
-        price_data = {}
 
     price_score = price_data.get("score", 50)
 
     seller_trust = product.get("sellerTrust", 50)
     review_trust = product.get("reviewTrust", 50)
-    return_risk = product.get("returnRisk", 50)
 
-    try:
-        seller_trust = float(seller_trust)
-    except (TypeError, ValueError):
-        seller_trust = 50
+    seller_risk = max(0, 100 - seller_trust)
+    review_risk = max(0, 100 - review_trust)
+    price_risk = max(0, 100 - price_score)
 
-    try:
-        review_trust = float(review_trust)
-    except (TypeError, ValueError):
-        review_trust = 50
-
-    try:
-        return_risk = float(return_risk)
-    except (TypeError, ValueError):
-        return_risk = 50
-
-    risk_score = round(
-        (
-            (100 - seller_trust) * 0.35 +
-            (100 - review_trust) * 0.25 +
-            (100 - price_score) * 0.25 +
-            return_risk * 0.15
-        ),
+    scam_risk = round(
+        (price_risk * 0.4)
+        + (seller_risk * 0.3)
+        + (review_risk * 0.3),
         2
     )
 
-    if risk_score >= 70:
+    if scam_risk >= 70:
         level = "HIGH"
-    elif risk_score >= 40:
+    elif scam_risk >= 40:
         level = "MEDIUM"
     else:
         level = "LOW"
 
     return {
-        "score": risk_score,
-        "riskScore": risk_score,
+        "score": round(100 - scam_risk, 2),
+        "risk": scam_risk,
         "level": level,
-        "sellerTrust": seller_trust,
-        "reviewTrust": review_trust,
-        "priceScore": price_score,
-        "returnRisk": return_risk
+        "priceRisk": price_risk,
+        "sellerRisk": seller_risk,
+        "reviewRisk": review_risk
     }
+
 
 def return_intelligence(product):
 
@@ -389,18 +366,6 @@ def regret_intelligence(product, budget):
 def final_decision(product, budget=None):
 
     price = price_intelligence(product)
-
-    # Normalize Flask tuple responses to dictionaries.
-    if isinstance(price, tuple):
-        price = price[0]
-
-    if not isinstance(price, dict):
-        price = {
-            "score": 50,
-            "price": product.get("price", 0),
-            "originalPrice": product.get("originalPrice", product.get("price", 0)),
-            "discount": 0
-        }
     reviews = review_intelligence(product)
     seller = seller_intelligence(product)
     scam = scam_intelligence(product)
@@ -1916,9 +1881,6 @@ def calculate_price_intelligence(product):
         "reasons": reasons
 
     }
-
-
-
 
 
 

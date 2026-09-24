@@ -554,141 +554,279 @@ function App() {
       </main>
 
       {selectedProduct && (
-        <div className="modal-overlay" onClick={() => setSelectedProduct(null)}>
-          <div className="analysis-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div>
-                <span className="eyebrow">SHOPGUARD AI</span>
-                <h2>{selectedProduct.name}</h2>
-                <p>{selectedProduct.brand} • ₹{selectedProduct.price?.toLocaleString()}</p>
-              </div>
-              <button className="close-btn" onClick={() => setSelectedProduct(null)}>×</button>
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setSelectedProduct(null);
+            setAnalysis(null);
+          }}
+        >
+          <div
+            className="analysis-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="modal-close"
+              onClick={() => {
+                setSelectedProduct(null);
+                setAnalysis(null);
+              }}
+            >
+              <X size={22} />
+            </button>
+
+            <div className="modal-icon">
+              <Brain size={34} />
             </div>
+
+            <span>SHOPGUARD AI ANALYSIS</span>
+
+            <h2>{selectedProduct.name}</h2>
+
+            <p>
+              {selectedProduct.brand} ? {selectedProduct.seller}
+            </p>
 
             {analysisLoading && (
               <div className="analysis-loading">
-                <div className="loader"></div>
-                <h3>Running ShopGuard AI...</h3>
-                <p>Analyzing product, price, seller, security and trust signals.</p>
+                <Brain size={32} />
+                <h3>Analyzing product...</h3>
+                <p>
+                  ShopGuard AI is evaluating price, reviews, seller trust,
+                  quality and shopping risks.
+                </p>
               </div>
             )}
 
             {analysisError && (
-              <div className="error-box">
-                <h3>Analysis Error</h3>
+              <div className="analysis-error">
+                <ShieldAlert size={28} />
+                <h3>Analysis failed</h3>
                 <p>{analysisError}</p>
+
+                <button
+                  onClick={() => analyzeProduct(selectedProduct)}
+                  className="primary-button"
+                >
+                  Try Again
+                </button>
               </div>
             )}
 
-            {!analysisLoading && analysis && (
+            {analysis && (
               <>
                 <div className="analysis-grid">
-
-                  <div className="analysis-card">
-                    <span>Overall Score</span>
+                  <div>
                     <strong>
-                      {analysis.overallScore ??
-                       analysis.score ??
-                       analysis.decision?.score ??
-                       "N/A"}
+                      {analysis.quality?.score ??
+                        analysis.qualityScore ??
+                        selectedProduct.qualityScore}%
                     </strong>
+                    <span>Quality</span>
                   </div>
 
-                  <div className="analysis-card">
+                  <div>
+                    <strong>
+                      {analysis.seller?.score ??
+                        analysis.sellerTrust ??
+                        selectedProduct.sellerTrust}%
+                    </strong>
                     <span>Seller Trust</span>
-                    <strong>{selectedProduct.sellerTrust ?? "N/A"}</strong>
                   </div>
 
-                  <div className="analysis-card">
+                  <div>
+                    <strong>
+                      {analysis.reviews?.score ??
+                        analysis.reviewTrust ??
+                        selectedProduct.reviewTrust}%
+                    </strong>
                     <span>Review Trust</span>
-                    <strong>{selectedProduct.reviewTrust ?? "N/A"}</strong>
                   </div>
 
-                  <div className="analysis-card">
-                    <span>Quality Score</span>
-                    <strong>{selectedProduct.qualityScore ?? "N/A"}</strong>
-                  </div>
-
-                  <div className="analysis-card">
+                  <div>
+                    <strong>
+                      {analysis.compatibility?.score ??
+                        selectedProduct.compatibilityScore}%
+                    </strong>
                     <span>Compatibility</span>
-                    <strong>{selectedProduct.compatibilityScore ?? "N/A"}</strong>
                   </div>
 
-                  <div className="analysis-card">
+                  <div>
+                    <strong>
+                      {analysis.eco?.score ??
+                        selectedProduct.ecoScore}%
+                    </strong>
                     <span>Eco Score</span>
-                    <strong>{selectedProduct.ecoScore ?? "N/A"}</strong>
                   </div>
 
+                  <div>
+                    <strong>
+                      {analysis.returns?.risk ??
+                        selectedProduct.returnRisk}%
+                    </strong>
+                    <span>Return Risk</span>
+                  </div>
                 </div>
 
-                {analysis.scamRisk && (
-                  <div className="intelligence-card">
-                    <h3>🛡️ Scam Risk</h3>
-                    <pre>{JSON.stringify(analysis.scamRisk, null, 2)}</pre>
+                <div className="analysis-result">
+                  <ShieldCheck size={22} />
+
+                  <div>
+                    <strong>ShopGuard AI Decision</strong>
+
+                    <p>
+                      {analysis.decision ||
+                        analysis.recommendation ||
+                        analysis.verdict ||
+                        "Product analysis completed successfully."}
+                    </p>
+                  </div>
+                </div>
+
+                {analysis.scam && (
+                  <div className="analysis-result">
+                    <ShieldAlert size={22} />
+
+                    <div>
+                      <strong>Scam Risk</strong>
+
+                      <p>
+                        Risk: {analysis.scam.risk ?? "N/A"}%
+                        {" ? "}
+                        Level: {analysis.scam.level ?? "N/A"}
+                      </p>
+                    </div>
                   </div>
                 )}
 
-                {intelligence?.price && (
-                  <div className="intelligence-card">
-                    <h3>💰 Price Intelligence</h3>
-                    <pre>{JSON.stringify(intelligence.price, null, 2)}</pre>
+                {analysis.price && (
+                  <div className="analysis-result">
+                    <PackageCheck size={22} />
+
+                    <div>
+                      <strong>Price Intelligence</strong>
+
+                      <p>
+                        Score: {analysis.price.score ?? "N/A"}
+                        {" ? "}
+                        Discount: {analysis.price.discount ?? 0}%
+                      </p>
+                    </div>
                   </div>
                 )}
-
-                <div className="intelligence-section">
-                  <h3>🧠 ShopGuard Intelligence</h3>
-
-                  <div className="intelligence-grid">
-
-                    {intelligence?.decision && (
-                      <div className="intelligence-card">
-                        <h4>Decision Engine</h4>
-                        <pre>{JSON.stringify(intelligence.decision, null, 2)}</pre>
-                      </div>
-                    )}
-
-                    {intelligence?.priceTruth && (
-                      <div className="intelligence-card">
-                        <h4>Price Intelligence</h4>
-                        <pre>{JSON.stringify(intelligence.priceTruth, null, 2)}</pre>
-                      </div>
-                    )}
-
-                    {intelligence?.productTruth && (
-                      <div className="intelligence-card">
-                        <h4>Product Truth</h4>
-                        <pre>{JSON.stringify(intelligence.productTruth, null, 2)}</pre>
-                      </div>
-                    )}
-
-                    {intelligence?.decisionIntelligence && (
-                      <div className="intelligence-card">
-                        <h4>Decision Intelligence</h4>
-                        <pre>{JSON.stringify(intelligence.decisionIntelligence, null, 2)}</pre>
-                      </div>
-                    )}
-
-                    {intelligence?.security && (
-                      <div className="intelligence-card">
-                        <h4>Security Intelligence</h4>
-                        <pre>{JSON.stringify(intelligence.security, null, 2)}</pre>
-                      </div>
-                    )}
-
-                    {intelligence?.negotiation && (
-                      <div className="intelligence-card">
-                        <h4>Negotiation Engine</h4>
-                        <pre>{JSON.stringify(intelligence.negotiation, null, 2)}</pre>
-                      </div>
-                    )}
-
-                  </div>
-                </div>
               </>
+
+              {intelligence && (
+                <div className="full-intelligence">
+                  <div className="intelligence-title">
+                    <Sparkles size={20} />
+                    <h3>ShopGuard AI Intelligence</h3>
+                  </div>
+
+                  {intelligence.decision && (
+                    <div className="intelligence-card">
+                      <Brain size={22} />
+                      <div>
+                        <strong>Decision Intelligence</strong>
+                        <p>
+                          {typeof intelligence.decision === "string"
+                            ? intelligence.decision
+                            : intelligence.decision.decision ||
+                              intelligence.decision.recommendation ||
+                              intelligence.decision.verdict ||
+                              "Decision analysis completed."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {intelligence.price && (
+                    <div className="intelligence-card">
+                      <PackageCheck size={22} />
+                      <div>
+                        <strong>Price Intelligence</strong>
+                        <p>
+                          Score:{" "}
+                          {intelligence.price.score ??
+                            intelligence.price.priceScore ??
+                            "N/A"}
+                          {" ? "}
+                          Discount:{" "}
+                          {intelligence.price.discount ??
+                            intelligence.price.discountPercent ??
+                            0}
+                          %
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {intelligence.truth && (
+                    <div className="intelligence-card">
+                      <ShieldCheck size={22} />
+                      <div>
+                        <strong>Product Truth</strong>
+                        <p>
+                          {intelligence.truth.verdict ||
+                            intelligence.truth.status ||
+                            intelligence.truth.message ||
+                            "Product truth analysis completed."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {intelligence.decisionIntelligence && (
+                    <div className="intelligence-card">
+                      <Brain size={22} />
+                      <div>
+                        <strong>Decision Engine</strong>
+                        <p>
+                          {intelligence.decisionIntelligence.verdict ||
+                            intelligence.decisionIntelligence.recommendation ||
+                            intelligence.decisionIntelligence.message ||
+                            "Decision intelligence completed."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {intelligence.security && (
+                    <div className="intelligence-card">
+                      <ShieldAlert size={22} />
+                      <div>
+                        <strong>Security Intelligence</strong>
+                        <p>
+                          {intelligence.security.level ||
+                            intelligence.security.riskLevel ||
+                            intelligence.security.verdict ||
+                            "Security analysis completed."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {intelligence.negotiation && (
+                    <div className="intelligence-card">
+                      <PackageCheck size={22} />
+                      <div>
+                        <strong>Negotiation Intelligence</strong>
+                        <p>
+                          {intelligence.negotiation.offer ||
+                            intelligence.negotiation.suggestedPrice ||
+                            intelligence.negotiation.recommendation ||
+                            "Negotiation analysis completed."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             )}
           </div>
         </div>
       )}
+
       <footer>
         <div className="logo">
           <ShieldCheck size={24} />
@@ -702,4 +840,3 @@ function App() {
 }
 
 export default App;
-
